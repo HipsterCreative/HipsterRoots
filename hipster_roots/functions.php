@@ -6,7 +6,7 @@ DEFINE( 'HIPSTER_URI', '/_hipster' );
  * Plugins loaded statically into theme
  * */
 include_once locate_template( HIPSTER_URI . '/_theme-loaded-plugins/advanced-custom-fields/acf.php' );
-include_once locate_template( HIPSTER_URI . '/_theme-loaded-plugins/acf-repeater/acf-repeater.php' );
+//include_once locate_template( HIPSTER_URI . '/_theme-loaded-plugins/acf-repeater/acf-repeater.php' );
 
 /* *
  * Load Main Hipster Class
