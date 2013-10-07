@@ -5,7 +5,7 @@
  * This particular test simply works with a single wordpress page object
  * */
 function get_structure( $hipster ) {
-    $body_template = getLastSlug();
+    $body_template = $hipster->mustache->get_the_slug();
     // Get the page ID from the current page slug
     $page = get_page_by_path( $body_template );
     // Get he page object from wordpress by specifying the ID

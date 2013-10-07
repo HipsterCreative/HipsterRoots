@@ -1,8 +1,7 @@
-;( function( $, window, undefined ) {
+;( function( $, HC, window, undefined ) {
     'use strict';
-    
     var hc_vc_extend = {
-        classes : ['one', 'two', 'three'],
+        classes : [],
         classListWrap : '<div class="vc-predefined-classes clearfix" />',
         classListCss : 'padding: 1em; cursor: pointer; float: left; display: block;',
         $modal : undefined,
@@ -10,6 +9,7 @@
         $classListWrap : undefined,
         input_val : '',
         init : function() {
+            hc_vc_extend.classes = HC.classes;
             hc_vc_extend.$modal = $( '.wpb-element-edit-modal:visible' );
             hc_vc_extend.$input = hc_vc_extend.$modal.find( 'input.el_class' );
             hc_vc_extend.input_val = hc_vc_extend.$input.val();
@@ -67,4 +67,4 @@
         }, 500 );
     } );
     
-} ( jQuery, this ) );
+} ( jQuery, window.HC, this ) );

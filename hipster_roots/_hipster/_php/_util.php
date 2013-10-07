@@ -95,7 +95,7 @@ function ensure_is_array( $data ) {
     // Otherwise, if an array, dig deeper
     else if( gettype( $data ) === "array" ){
         foreach( $data as $key => $val ) {
-            $data[$key] = ensure_is_array( $data[$key] );
+            $data[$key] = ensure_is_array( $val );
         }        
     }
     
@@ -115,14 +115,21 @@ function getURI() {
  * Returns the last human-readable(?) slug
  * */
 function getLastSlug() {
-    $parts = getURI();
-    $slug = $parts[count( $parts ) - 1];
+    $slug = get_url_slug( -1 );
     // In the odd case there is some kind of GET uri ( often codekit ), drop down a segment
     // We could modify this to test and exaust full url.. but deeper issues would be present in such cases.
     if( startsWith( $slug, "?" ) ) {
-        $slug = $parts[count( $parts ) - 2];
+        $slug = get_url_slug( -2 );
     }
     return $slug;
+}
+
+/* *
+ * Returns the url slug, starting at the end of the url. -$index
+ * */
+function get_url_slug( $index = -1 ) {
+    $uri = getURI();
+    return $uri[count( $uri ) + $index];
 }
 
 /* *
@@ -177,4 +184,123 @@ function exists_OR( $array ) {
 function exists( $var ) {
     return isset( $var ) && ! empty( $var );
 }
+
+/* *
+ * http://blog.phpinfinite.com/dynamically-resize-or-crop-images-in-php/
+ * Resize and crop given image
+ * returns base 64 encoded image
+ * 
+ * Modified to shorten code a bit since you can just read the above url, and we're doing a bunch of math I didn't write
+ * Modified so that the output is always a base64_encoded png. Non-jpg outputs had some weird backgrounds, easier to just treat as png
+ * */
+function get_cropped_img( $url, $alt = 'image', $width = 275, $height = 275 ) {
+    $type = explode( ".", $url );
+    $ext = strtolower( $type[sizeof( $type )-1] );
+    $ext = ( ! in_array( $ext, array( "jpeg","png","gif" ) ) ) ? "jpeg" : $ext;
+    $size = getimagesize( $url );
+    $w = $size[0]; // Width
+    $h = $size[1]; // Height
+    //error_log("Orig Width: ".$w." Height: ".$h);
+    $func = "imagecreatefrom".$ext;
+    $source = $func( $url );
+    $nw = $w; // New Width
+    $nh = $h; // New Height
+    $k_w = 1;
+    $k_h = 1;
+    $dst_x =0;
+    $dst_y =0;
+    $src_x =0;
+    $src_y =0;
+
+    //selecting width and height
+    if( $width === 0 || $height === 0 ) {
+        $nh = $h;
+        $nw = $w;
+    }
+    else if( $width === 0 ) {
+        $nh = $height;
+        $nw = ( $w * $height ) / $h;
+    }
+    else if( $height === 0 ) {
+        $nh = ( $height * $width ) / $w;
+        $nw = $Width;
+    }
+    else {
+        $nw = $width;
+        $nh = $height;
+    }
+    //error_log("Nw: ".$nw." w: ".$w." Nh: ".$nh." h: ".$h);
+    
+    if( $nw > $w ) {
+        $dst_x = ( $nw - $w ) / 2;
+    }
+    if( $nh > $h ) {
+        $dst_y = ( $nh - $h ) / 2;
+    }
+    //error_log("dx: ".$dst_x." dy: ".$dst_y);
+    
+    if( $nw < $w || $nh < $h ) {
+        $k_w = $nw / $w;
+        $k_h = $nh / $h;
+    
+        if( $nh > $h ) {
+            $src_x  = ( $w - $nw ) / 2;
+        }
+        else if( $nw > $w ) {
+                $src_y  = ( $h - $nh ) / 2;
+        }
+        else {
+            if( $k_h > $k_w ) {
+                $src_x = round( ( $w - ( $nw / $k_h ) ) / 2 );
+            }
+            else {
+                $src_y = round( ( $h - ( $nh / $k_w ) ) / 2 );
+            }
+        }
+    }
+    $output = imagecreatetruecolor( $nw, $nh );
+    
+    // Apply proper transparency handling for png's
+    //saving all full alpha channel information
+    imagesavealpha( $output, true );
+    
+    //setting completely transparent color
+    $transparent = imagecolorallocatealpha( $output, 0, 0, 0, 127 );
+    
+    //filling created image with transparent color
+    imagefill( $output, 0, 0, $transparent );
+    
+    if( is_bool( $source ) ) {
+        error_log( "\$source was a boolean and not an image." );
+        return null;
+    }
+    
+    imagecopyresampled( $output, $source,  $dst_x, $dst_y, $src_x, $src_y, 
+                        $nw - 2 * $dst_x, $nh - 2 * $dst_y, 
+                        $w - 2 * $src_x, $h - 2 * $src_y );
+    ImageDestroy( $source );
+    ob_start();
+    // Create the image
+    $image = imagepng( $output );
+    // base64 encode output buffer
+    $out = base64_encode( ob_get_clean() );
+    ImageDestroy( $output );
+    
+    // return image tag
+    if ( isset( $out ) && ! empty( $out ) ) {
+        return '<img src="data:image/png;base64,' . $out . '" width="' . $width . '" height="' . $height . '" alt="' . $alt . '">';
+    }
+    else {
+        return null;
+    }
+}
+
+/* *
+ * Return true if current page is a sub page of another
+ * */
+function is_subpage() {
+    global $post;
+    return is_page() && $post->post_parent;
+}
+
 ?>
