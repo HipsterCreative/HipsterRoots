@@ -7,6 +7,7 @@ class HC_Main {
     public $dir;
     // HC_Mustache handle
     private $mustache;
+    private $show_footer = true;
     private $debug = true;
     private $debug_depth = 2;
     private $debug_data = array();
@@ -77,7 +78,12 @@ class HC_Main {
     
     private function custom_php() {
         require_once( $this->dir['php'] . '/theme-functions.php' );
+        if( $this->show_footer ) {
+            require_once( $this->dir['php'] . '/_footer.php' );
+            add_action( 'wp_footer', array( new HC_Footer, 'print_footer' ) );
+        }
     }
+    
     public function log( $data, $depth = 0) {
         if( $depth <= $this->debug_depth ) {
             $this->debug_data[] = $data;
